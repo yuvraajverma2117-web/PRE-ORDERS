@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Madhukunj Diwali Pre-Orders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background-color: #FFF8F0; 
+        }
+        h1, h2, h3, .brand-font {
+            font-family: 'Alfa Slab One', serif;
+            letter-spacing: 0.5px;
+        }
+        .bg-scarlet { background-color: #EF231A; }
+        .text-scarlet { color: #EF231A; }
+        .bg-peach { background-color: #FBD2A4; }
+        .border-peach { border-color: #FBD2A4; }
+        
+        input[type="range"] {
+            -webkit-appearance: none; height: 8px; background: #FBD2A4; border-radius: 5px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #EF231A; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .square-card { transition: all 0.3s ease; aspect-ratio: 1 / 1; }
+        .square-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(239, 35, 26, 0.15); border-color: #EF231A !important; }
+        .square-card:hover .edit-btn { opacity: 1; }
+        .edit-btn { opacity: 0; transition: opacity 0.2s; }
+        .modal { transition: opacity 0.3s ease, pointer-events 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl text-scarlet">MADHUKUNJ</h1>
+            <p class="text-gray-600 mt-1 text-lg font-bold tracking-wide">"Delight in Every Bite"</p>
+            <div class="w-24 h-1 bg-peach mx-auto mt-4 rounded-full"></div>
+            <p class="text-gray-500 mt-4">Diwali Sweet Pre-Orders & Reservations</p>
+        </header>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <button onclick="addSweetSquare()" class="bg-scarlet text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors shadow-md w-full sm:w-auto">+ Add New Sweet</button>
+            <button onclick="openAllOrdersModal()" class="bg-gray-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-md w-full sm:w-auto">📋 View All Pre-Orders</button>
+        </div>
+
+        <!-- Sweets Grid -->
+        <div id="sweetsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8"></div>
+    </div>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('orderModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <h2 id="modalSweetTitle" class="text-2xl text-scarlet mb-4">Pre-order: Sweet Name</h2>
+            
+            <form id="orderForm" onsubmit="saveOrder(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Customer Name</label>
+                    <input type="text" id="customerName" required placeholder="Enter customer name" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Contact Number</label>
+                    <input type="tel" id="customerContact" required placeholder="Enter phone number" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]">
+                </div>
+
+                <!-- Order Type Toggle -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Order Type</label>
+                    <select id="orderType" onchange="toggleOrderFields()" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A] bg-white">
+                        <option value="Delivery">Delivery / Takeaway</option>
+                        <option value="DineIn">Dine-In (Sitting)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
+                        <input type="date" id="orderDate" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Time</label>
+                        <input type="time" id="orderTime" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">
+                        Quantity (in Kg) <span id="quantityPlaceholder" class="text-scarlet font-bold ml-2">1 Kg</span>
+                    </label>
+                    <input type="range" id="quantitySlider" min="0.5" max="10" step="0.5" value="1" class="w-full mt-2" oninput="updateQuantityPlaceholder()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>0.5 Kg</span><span>10 Kg</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Field: Address (for Delivery) -->
+                <div id="addressBox">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Delivery Address</label>
+                    <textarea id="customerAddress" rows="3" placeholder="Enter full address" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]"></textarea>
+                </div>
+
+                <!-- Dynamic Field: Table Number ( for Dine-In ) -->
+                <div id="tableBox" class="hidden">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Table Number / Sitting Preference</label>
+                    <input type="text" id="tableNumber" placeholder="e.g., Table 5 or Window seat" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A]">
+                </div>
+
+                <button type="submit" id="submitOrderBtn" class="w-full bg-scarlet text-white py-3 rounded-lg font-bold hover:bg-red-700 transition-colors mt-2">Save Pre-Order</button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-gray-100">
+                <h3 class="font-bold text-gray-700 mb-2">Existing Pre-orders for this Sweet:</h3>
+                <ul id="ordersList" class="space-y-2 text-sm text-gray-600"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Orders Modal -->
+    <div id="allOrdersModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('allOrdersModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <h2 class="text-2xl text-scarlet mb-4">All Customer Pre-Orders</h2>
+            
+            <!-- Summary Dashboard -->
+            <div id="summaryDashboard" class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-peach p-4 rounded-lg text-center">
+                    <p class="text-3xl font-bold text-scarlet" id="totalOrdersCount">0</p>
+                    <p class="text-sm text-gray-700 font-semibold">Total Orders</p>
+                </div>
+                <div class="bg-peach p-4 rounded-lg text-center">
+                    <p class="text-3xl font-bold text-scarlet" id="totalKgCount">0</p>
+                    <p class="text-sm text-gray-700 font-semibold">Total Kg Ordered</p>
+                </div>
+            </div>
+
+            <div id="allOrdersList" class="space-y-4 text-sm text-gray-600"></div>
+        </div>
+    </div>
+
+    <script>
+        let sweets = JSON.parse(localStorage.getItem('madhukunjSweets')) || [];
+        let currentSweetId = null;
+        let editingSweetId = null; 
+        let editingOrderId = null; // Tracks if we are editing an order
+
+        // Ensure all old orders have IDs
+        sweets.forEach(sweet => {
+            if (!sweet.orders) sweet.orders = [];
+            sweet.orders.forEach(order => {
+                if (!order.id) order.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+            });
+        });
+        localStorage.setItem('madhukunjSweets', JSON.stringify(sweets));
+
+        const sweetsGrid = document.getElementById('sweetsGrid');
+        const orderModal = document.getElementById('orderModal');
+        const allOrdersModal = document.getElementById('allOrdersModal');
+        const modalSweetTitle = document.getElementById('modalSweetTitle');
+        const quantitySlider = document.getElementById('quantitySlider');
+        const quantityPlaceholder = document.getElementById('quantityPlaceholder');
+        const ordersList = document.getElementById('ordersList');
+        const allOrdersList = document.getElementById('allOrdersList');
+        const submitOrderBtn = document.getElementById('submitOrderBtn');
+
+        function saveData() { localStorage.setItem('madhukunjSweets', JSON.stringify(sweets)); }
+
+        function renderSweets() {
+            if (sweets.length === 0) {
+                sweetsGrid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-10 font-semibold">No sweets added yet. Tap "Add New Sweet" to begin!</p>';
+                return;
+            }
+            sweetsGrid.innerHTML = sweets.map(sweet => {
+                let totalKg = sweet.orders.reduce((sum, o) => sum + parseFloat(o.qty), 0).toFixed(1);
+                
+                if (editingSweetId === sweet.id) {
+                    return `
+                        <div class="square-card bg-white p-4 rounded-xl shadow-md border-2 border-scarlet flex flex-col items-center justify-center">
+                            <input type="text" value="${sweet.name}" id="editInput-${sweet.id}" class="w-full text-center p-2 border-2 border-peach rounded-md font-bold focus:outline-none focus:ring-2 focus:ring-scarlet" onblur="saveSweetName('${sweet.id}')" onkeydown="if(event.key==='Enter') saveSweetName('${sweet.id}')" autofocus>
+                            <p class="text-xs text-gray-500 mt-2">Press Enter to save</p>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="square-card bg-white p-4 rounded-xl shadow-md cursor-pointer border-2 border-peach flex flex-col items-center justify-center relative" onclick="openModal('${sweet.id}')">
+                        <button onclick="event.stopPropagation(); editSweetName('${sweet.id}')" class="edit-btn absolute top-2 right-2 text-gray-400 hover:text-scarlet text-xl bg-white rounded-full p-1">✏️</button>
+                        <div class="text-4xl mb-2">🍬</div>
+                        <h3 class="text-lg text-gray-800 text-center brand-font uppercase">${sweet.name}</h3>
+                        <div class="mt-2 flex flex-col items-center gap-1">
+                            <span class="inline-block bg-peach text-scarlet px-2 py-1 rounded-full text-xs font-bold">${sweet.orders.length} Orders</span>
+                            <span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-bold">${totalKg} Kg Total</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addSweetSquare() {
+            const newSweet = { id: Date.now().toString(), name: "New Sweet", orders: [] };
+            sweets.push(newSweet);
+            editingSweetId = newSweet.id; 
+            saveData();
+            renderSweets();
+        }
+
+        function editSweetName(id) {
+            editingSweetId = id;
+            renderSweets();
+            setTimeout(() => {
+                const input = document.getElementById(`editInput-${id}`);
+                if (input) { input.focus(); input.select(); }
+            }, 10);
+        }
+
+        function saveSweetName(id) {
+            const input = document.getElementById(`editInput-${id}`);
+            if (!input) return;
+            const sweet = sweets.find(s => s.id === id);
+            if (sweet) { sweet.name = input.value.trim() || "Unnamed Sweet"; }
+            editingSweetId = null;
+            saveData();
+            renderSweets();
+        }
+
+        function openModal(id) {
+            currentSweetId = id;
+            editingOrderId = null; // Reset edit mode
+            submitOrderBtn.innerText = "Save Pre-Order"; // Reset button text
+            
+            const sweet = sweets.find(s => s.id === id);
+            if (!sweet) return;
+            modalSweetTitle.textContent = `Pre-order: ${sweet.name}`;
+            document.getElementById('orderForm').reset();
+            document.getElementById('orderDate').valueAsDate = new Date();
+            
+            quantitySlider.value = 1;
+            updateQuantityPlaceholder();
+            toggleOrderFields(); 
+
+            renderSingleSweetOrders(sweet);
+            
+            orderModal.classList.remove('hidden');
+            orderModal.classList.add('flex');
+        }
+
+        function renderSingleSweetOrders(sweet) {
+            if (sweet.orders.length > 0) {
+                ordersList.innerHTML = sweet.orders.map(order => `
+                    <li class="bg-peach p-2 rounded">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-gray-800">${order.name}</span> - ${order.qty} Kg<br>
+                                <span class="text-xs text-gray-600">📞 ${order.contact} | 📅 ${order.date} at ${order.time}</span><br>
+                                <span class="text-xs text-gray-600">${order.type === 'DineIn' ? '🪑 Dine-In (Table: ' + order.table + ')' : '🛵 Delivery (' + order.address + ')'}</span>
+                            </div>
+                            <div class="flex gap-1 flex-shrink-0">
+                                <button onclick="editOrder('${sweet.id}', '${order.id}')" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
+                                <button onclick="deleteOrder('${sweet.id}', '${order.id}', 'single')" class="text-xs bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
+                            </div>
+                        </div>
+                    </li>
+                `).join('');
+            } else {
+                ordersList.innerHTML = '<li class="text-gray-400 text-xs">No pre-orders for this sweet yet.</li>';
+            }
+        }
+
+        function editOrder(sweetId, orderId) {
+            const sweet = sweets.find(s => s.id === sweetId);
+            if (!sweet) return;
+            const order = sweet.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            editingOrderId = orderId; // Set edit mode
+            
+            modalSweetTitle.textContent = `EDITING: ${sweet.name}`;
+            submitOrderBtn.innerText = "Update Pre-Order";
+            
+            // Populate form
+            document.getElementById('customerName').value = order.name;
+            document.getElementById('customerContact').value = order.contact;
+            document.getElementById('orderType').value = order.type;
+            document.getElementById('orderDate').value = order.date;
+            document.getElementById('orderTime').value = order.time;
+            quantitySlider.value = order.qty;
+            updateQuantityPlaceholder();
+            
+            toggleOrderFields(); 
+
+            if (order.type === 'Delivery') {
+                document.getElementById('customerAddress').value = order.address === 'N/A' ? '' : order.address;
+            } else {
+                document.getElementById('tableNumber').value = order.table === 'N/A' ? '' : order.table;
+            }
+        }
+
+        function deleteOrder(sweetId, orderId, modalType) {
+            if (!confirm('Are you sure you want to delete this pre-order?')) return;
+            
+            const sweet = sweets.find(s => s.id === sweetId);
+            if (!sweet) return;
+            
+            sweet.orders = sweet.orders.filter(o => o.id !== orderId);
+            saveData();
+            renderSweets();
+            
+            // Refresh the open modal
+            if (modalType === 'single') {
+                renderSingleSweetOrders(sweet);
+            } else {
+                openAllOrdersModal();
+            }
+        }
+
+        function toggleOrderFields() {
+            const type = document.getElementById('orderType').value;
+            const addressBox = document.getElementById('addressBox');
+            const tableBox = document.getElementById('tableBox');
+            const addressInput = document.getElementById('customerAddress');
+            const tableInput = document.getElementById('tableNumber');
+
+            if (type === 'DineIn') {
+                tableBox.classList.remove('hidden');
+                addressBox.classList.add('hidden');
+                addressInput.required = false;
+                tableInput.required = true;
+            } else {
+                tableBox.classList.add('hidden');
+                addressBox.classList.remove('hidden');
+                addressInput.required = true;
+                tableInput.required = false;
+            }
+        }
+
+        function openAllOrdersModal() {
+            let totalOrders = 0;
+            let totalKg = 0;
+
+            sweets.forEach(sweet => {
+                sweet.orders.forEach(order => {
+                    totalOrders++;
+                    totalKg += parseFloat(order.qty);
+                });
+            });
+
+            document.getElementById('totalOrdersCount').innerText = totalOrders;
+            document.getElementById('totalKgCount').innerText = totalKg.toFixed(1) + ' Kg';
+
+            if (totalOrders === 0) {
+                allOrdersList.innerHTML = '<p class="text-gray-400 text-center py-4 font-semibold">No pre-orders have been made yet.</p>';
+            } else {
+                allOrdersList.innerHTML = sweets.map(sweet => {
+                    if (sweet.orders.length === 0) return '';
+                    return `
+                        <div class="border-b border-peach pb-3 mb-3">
+                            <h3 class="text-scarlet text-lg mb-2 brand-font uppercase">${sweet.name} 🍬</h3>
+                            <ul class="space-y-2">
+                                ${sweet.orders.map(o => `
+                                    <li class="bg-gray-50 p-2 rounded text-xs relative">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="font-bold text-gray-800 block">${o.name} - ${o.qty} Kg</span>
+                                            <div class="flex gap-1 flex-shrink-0">
+                                                <button onclick="editOrderFromAll('${sweet.id}', '${o.id}')" class="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
+                                                <button onclick="deleteOrder('${sweet.id}', '${o.id}', 'all')" class="bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
+                                            </div>
+                                        </div>
+                                        <div class="text-gray-600 pr-12">
+                                            📞 ${o.contact} | 📅 ${o.date} at ${o.time}<br>
+                                            ${o.type === 'DineIn' ? '🪑 Table: ' + o.table : '🛵 Address: ' + o.address}
+                                        </div>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
+            }
+            allOrdersModal.classList.remove('hidden');
+            allOrdersModal.classList.add('flex');
+        }
+
+        function editOrderFromAll(sweetId, orderId) {
+            closeModal('allOrdersModal');
+            setTimeout(() => {
+                openModal(sweetId); // Open the specific sweet modal
+                setTimeout(() => {
+                    editOrder(sweetId, orderId); // Trigger edit mode
+                }, 100);
+            }, 200);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            if (modalId === 'orderModal') {
+                currentSweetId = null;
+                editingOrderId = null;
+            }
+        }
+
+        function updateQuantityPlaceholder() { quantityPlaceholder.textContent = `${quantitySlider.value} Kg`; }
+
+        function saveOrder(e) {
+            e.preventDefault();
+            const sweet = sweets.find(s => s.id === currentSweetId);
+            if (!sweet) return;
+
+            const orderType = document.getElementById('orderType').value;
+            const orderData = {
+                name: document.getElementById('customerName').value,
+                contact: document.getElementById('customerContact').value,
+                type: orderType,
+                date: document.getElementById('orderDate').value,
+                time: document.getElementById('orderTime').value,
+                qty: quantitySlider.value,
+                address: orderType === 'Delivery' ? document.getElementById('customerAddress').value : 'N/A',
+                table: orderType === 'DineIn' ? (document.getElementById('tableNumber').value || 'Not specified') : 'N/A'
+            };
+            
+            if (editingOrderId) {
+                // Update existing order
+                const orderIndex = sweet.orders.findIndex(o => o.id === editingOrderId);
+                if (orderIndex !== -1) {
+                    orderData.id = editingOrderId; // Keep the same ID
+                    sweet.orders[orderIndex] = orderData;
+                }
+                editingOrderId = null; // Exit edit mode
+            } else {
+                // Add new order
+                orderData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                sweet.orders.push(orderData);
+            }
+            
+            saveData();
+            closeModal('orderModal');
+            renderSweets();
+        }
+
+        orderModal.addEventListener('click', function(e) { if (e.target === orderModal) closeModal('orderModal'); });
+        allOrdersModal.addEventListener('click', function(e) { if (e.target === allOrdersModal) closeModal('allOrdersModal'); });
+
+        renderSweets();
+    </script>
+</body>
+</html>
