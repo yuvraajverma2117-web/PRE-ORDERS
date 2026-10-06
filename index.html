@@ -20,17 +20,16 @@
         .bg-peach { background-color: #FBD2A4; }
         .border-peach { border-color: #FBD2A4; }
         
-        input[type="range"] {
-            -webkit-appearance: none; height: 8px; background: #FBD2A4; border-radius: 5px; outline: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #EF231A; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
         .square-card { transition: all 0.3s ease; aspect-ratio: 1 / 1; }
         .square-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(239, 35, 26, 0.15); border-color: #EF231A !important; }
         .square-card:hover .edit-btn { opacity: 1; }
         .edit-btn { opacity: 0; transition: opacity 0.2s; }
         .modal { transition: opacity 0.3s ease, pointer-events 0.3s ease; }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
@@ -90,13 +89,22 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">
-                        Quantity (in Kg) <span id="quantityPlaceholder" class="text-scarlet font-bold ml-2">1 Kg</span>
-                    </label>
-                    <input type="range" id="quantitySlider" min="0.5" max="10" step="0.5" value="1" class="w-full mt-2" oninput="updateQuantityPlaceholder()">
-                    <div class="flex justify-between text-xs text-gray-400 mt-1">
-                        <span>0.5 Kg</span><span>10 Kg</span>
+                <!-- Box Quantity Inputs -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Select Box Sizes</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">500g Boxes</label>
+                            <input type="number" id="boxes500" min="0" value="0" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A] text-center text-lg font-bold" oninput="updateTotalWeight()">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">1kg Boxes</label>
+                            <input type="number" id="boxes1kg" min="0" value="0" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] focus:border-[#EF231A] text-center text-lg font-bold" oninput="updateTotalWeight()">
+                        </div>
+                    </div>
+                    <div class="mt-3 bg-peach p-2 rounded-lg text-center">
+                        <span class="text-sm text-gray-700 font-bold">Total to Prepare: </span>
+                        <span id="totalWeightPlaceholder" class="text-scarlet font-bold text-lg">0 Kg</span>
                     </div>
                 </div>
 
@@ -136,7 +144,7 @@
                 </div>
                 <div class="bg-peach p-4 rounded-lg text-center">
                     <p class="text-3xl font-bold text-scarlet" id="totalKgCount">0</p>
-                    <p class="text-sm text-gray-700 font-semibold">Total Kg Ordered</p>
+                    <p class="text-sm text-gray-700 font-semibold">Total Sweets to Prepare</p>
                 </div>
             </div>
 
@@ -145,16 +153,35 @@
     </div>
 
     <script>
-        let sweets = JSON.parse(localStorage.getItem('madhukunjSweets')) || [];
+        // Initialize Default Sweets if none exist
+        let sweets = JSON.parse(localStorage.getItem('madhukunjSweets'));
+        
+        if (!sweets || sweets.length === 0) {
+            sweets = [
+                { id: 'def-1', name: "SOAN PAPDI", orders: [] },
+                { id: 'def-2', name: "MAVA MIX MITHAI", orders: [] },
+                { id: 'def-3', name: "SADA BARFI", orders: [] },
+                { id: 'def-4', name: "MILK CAKE", orders: [] },
+                { id: 'def-5', name: "GULAB JAMUN", orders: [] },
+                { id: 'def-6', name: "KAJU KATLI", orders: [] }
+            ];
+            localStorage.setItem('madhukunjSweets', JSON.stringify(sweets));
+        }
+
         let currentSweetId = null;
         let editingSweetId = null; 
-        let editingOrderId = null; // Tracks if we are editing an order
+        let editingOrderId = null; 
 
-        // Ensure all old orders have IDs
+        // Ensure all old orders have IDs and convert old 'qty' to new box format
         sweets.forEach(sweet => {
             if (!sweet.orders) sweet.orders = [];
             sweet.orders.forEach(order => {
                 if (!order.id) order.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                if (order.boxes500 === undefined) {
+                    order.boxes1kg = parseFloat(order.qty) || 0;
+                    order.boxes500 = 0;
+                    delete order.qty;
+                }
             });
         });
         localStorage.setItem('madhukunjSweets', JSON.stringify(sweets));
@@ -163,13 +190,16 @@
         const orderModal = document.getElementById('orderModal');
         const allOrdersModal = document.getElementById('allOrdersModal');
         const modalSweetTitle = document.getElementById('modalSweetTitle');
-        const quantitySlider = document.getElementById('quantitySlider');
-        const quantityPlaceholder = document.getElementById('quantityPlaceholder');
+        const totalWeightPlaceholder = document.getElementById('totalWeightPlaceholder');
         const ordersList = document.getElementById('ordersList');
         const allOrdersList = document.getElementById('allOrdersList');
         const submitOrderBtn = document.getElementById('submitOrderBtn');
 
         function saveData() { localStorage.setItem('madhukunjSweets', JSON.stringify(sweets)); }
+
+        function calculateTotalKg(boxes500, boxes1kg) {
+            return (parseFloat(boxes500) * 0.5) + parseFloat(boxes1kg);
+        }
 
         function renderSweets() {
             if (sweets.length === 0) {
@@ -177,7 +207,7 @@
                 return;
             }
             sweetsGrid.innerHTML = sweets.map(sweet => {
-                let totalKg = sweet.orders.reduce((sum, o) => sum + parseFloat(o.qty), 0).toFixed(1);
+                let totalKg = sweet.orders.reduce((sum, o) => sum + calculateTotalKg(o.boxes500, o.boxes1kg), 0).toFixed(1);
                 
                 if (editingSweetId === sweet.id) {
                     return `
@@ -194,7 +224,7 @@
                         <h3 class="text-lg text-gray-800 text-center brand-font uppercase">${sweet.name}</h3>
                         <div class="mt-2 flex flex-col items-center gap-1">
                             <span class="inline-block bg-peach text-scarlet px-2 py-1 rounded-full text-xs font-bold">${sweet.orders.length} Orders</span>
-                            <span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-bold">${totalKg} Kg Total</span>
+                            <span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-bold">Prepare: ${totalKg} Kg</span>
                         </div>
                     </div>
                 `;
@@ -230,8 +260,8 @@
 
         function openModal(id) {
             currentSweetId = id;
-            editingOrderId = null; // Reset edit mode
-            submitOrderBtn.innerText = "Save Pre-Order"; // Reset button text
+            editingOrderId = null; 
+            submitOrderBtn.innerText = "Save Pre-Order"; 
             
             const sweet = sweets.find(s => s.id === id);
             if (!sweet) return;
@@ -239,8 +269,10 @@
             document.getElementById('orderForm').reset();
             document.getElementById('orderDate').valueAsDate = new Date();
             
-            quantitySlider.value = 1;
-            updateQuantityPlaceholder();
+            document.getElementById('boxes500').value = 0;
+            document.getElementById('boxes1kg').value = 0;
+            updateTotalWeight();
+            
             toggleOrderFields(); 
 
             renderSingleSweetOrders(sweet);
@@ -251,21 +283,25 @@
 
         function renderSingleSweetOrders(sweet) {
             if (sweet.orders.length > 0) {
-                ordersList.innerHTML = sweet.orders.map(order => `
-                    <li class="bg-peach p-2 rounded">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="font-bold text-gray-800">${order.name}</span> - ${order.qty} Kg<br>
-                                <span class="text-xs text-gray-600">📞 ${order.contact} | 📅 ${order.date} at ${order.time}</span><br>
-                                <span class="text-xs text-gray-600">${order.type === 'DineIn' ? '🪑 Dine-In (Table: ' + order.table + ')' : '🛵 Delivery (' + order.address + ')'}</span>
+                ordersList.innerHTML = sweet.orders.map(order => {
+                    let orderTotal = calculateTotalKg(order.boxes500, order.boxes1kg).toFixed(1);
+                    return `
+                        <li class="bg-peach p-2 rounded">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="font-bold text-gray-800">${order.name}</span> - ${orderTotal} Kg Total<br>
+                                    <span class="text-xs text-gray-600">📦 ${order.boxes500} x 500g | ${order.boxes1kg} x 1kg</span><br>
+                                    <span class="text-xs text-gray-600">📞 ${order.contact} | 📅 ${order.date} at ${order.time}</span><br>
+                                    <span class="text-xs text-gray-600">${order.type === 'DineIn' ? '🪑 Dine-In (Table: ' + order.table + ')' : '🛵 Delivery (' + order.address + ')'}</span>
+                                </div>
+                                <div class="flex gap-1 flex-shrink-0">
+                                    <button onclick="editOrder('${sweet.id}', '${order.id}')" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
+                                    <button onclick="deleteOrder('${sweet.id}', '${order.id}', 'single')" class="text-xs bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
+                                </div>
                             </div>
-                            <div class="flex gap-1 flex-shrink-0">
-                                <button onclick="editOrder('${sweet.id}', '${order.id}')" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
-                                <button onclick="deleteOrder('${sweet.id}', '${order.id}', 'single')" class="text-xs bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
-                            </div>
-                        </div>
-                    </li>
-                `).join('');
+                        </li>
+                    `;
+                }).join('');
             } else {
                 ordersList.innerHTML = '<li class="text-gray-400 text-xs">No pre-orders for this sweet yet.</li>';
             }
@@ -277,7 +313,7 @@
             const order = sweet.orders.find(o => o.id === orderId);
             if (!order) return;
 
-            editingOrderId = orderId; // Set edit mode
+            editingOrderId = orderId; 
             
             modalSweetTitle.textContent = `EDITING: ${sweet.name}`;
             submitOrderBtn.innerText = "Update Pre-Order";
@@ -288,8 +324,10 @@
             document.getElementById('orderType').value = order.type;
             document.getElementById('orderDate').value = order.date;
             document.getElementById('orderTime').value = order.time;
-            quantitySlider.value = order.qty;
-            updateQuantityPlaceholder();
+            
+            document.getElementById('boxes500').value = order.boxes500 || 0;
+            document.getElementById('boxes1kg').value = order.boxes1kg || 0;
+            updateTotalWeight();
             
             toggleOrderFields(); 
 
@@ -310,7 +348,6 @@
             saveData();
             renderSweets();
             
-            // Refresh the open modal
             if (modalType === 'single') {
                 renderSingleSweetOrders(sweet);
             } else {
@@ -338,6 +375,13 @@
             }
         }
 
+        function updateTotalWeight() {
+            let b500 = parseInt(document.getElementById('boxes500').value) || 0;
+            let b1kg = parseInt(document.getElementById('boxes1kg').value) || 0;
+            let total = calculateTotalKg(b500, b1kg);
+            totalWeightPlaceholder.innerText = total.toFixed(1) + " Kg";
+        }
+
         function openAllOrdersModal() {
             let totalOrders = 0;
             let totalKg = 0;
@@ -345,37 +389,44 @@
             sweets.forEach(sweet => {
                 sweet.orders.forEach(order => {
                     totalOrders++;
-                    totalKg += parseFloat(order.qty);
+                    totalKg += calculateTotalKg(order.boxes500, order.boxes1kg);
                 });
             });
 
             document.getElementById('totalOrdersCount').innerText = totalOrders;
-            document.getElementById('totalKgCount').innerText = totalKg.toFixed(1) + ' Kg';
+            document.getElementById('totalKgCount').innerText = totalKg.toFixed(1) + " Kg";
 
             if (totalOrders === 0) {
                 allOrdersList.innerHTML = '<p class="text-gray-400 text-center py-4 font-semibold">No pre-orders have been made yet.</p>';
             } else {
                 allOrdersList.innerHTML = sweets.map(sweet => {
                     if (sweet.orders.length === 0) return '';
+                    let sweetTotalKg = sweet.orders.reduce((sum, o) => sum + calculateTotalKg(o.boxes500, o.boxes1kg), 0).toFixed(1);
                     return `
                         <div class="border-b border-peach pb-3 mb-3">
-                            <h3 class="text-scarlet text-lg mb-2 brand-font uppercase">${sweet.name} 🍬</h3>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-scarlet text-lg brand-font uppercase">${sweet.name} 🍬</h3>
+                                <span class="bg-gray-800 text-white px-2 py-1 rounded-full text-xs font-bold">Prep: ${sweetTotalKg} Kg</span>
+                            </div>
                             <ul class="space-y-2">
-                                ${sweet.orders.map(o => `
+                                ${sweet.orders.map(o => {
+                                    let orderTotal = calculateTotalKg(o.boxes500, o.boxes1kg).toFixed(1);
+                                    return `
                                     <li class="bg-gray-50 p-2 rounded text-xs relative">
                                         <div class="flex justify-between items-start mb-1">
-                                            <span class="font-bold text-gray-800 block">${o.name} - ${o.qty} Kg</span>
+                                            <span class="font-bold text-gray-800 block">${o.name}</span>
                                             <div class="flex gap-1 flex-shrink-0">
                                                 <button onclick="editOrderFromAll('${sweet.id}', '${o.id}')" class="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
                                                 <button onclick="deleteOrder('${sweet.id}', '${o.id}', 'all')" class="bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
                                             </div>
                                         </div>
                                         <div class="text-gray-600 pr-12">
+                                            📦 ${o.boxes500} x 500g | ${o.boxes1kg} x 1kg <span class="font-bold text-scarlet">(${orderTotal} Kg)</span><br>
                                             📞 ${o.contact} | 📅 ${o.date} at ${o.time}<br>
                                             ${o.type === 'DineIn' ? '🪑 Table: ' + o.table : '🛵 Address: ' + o.address}
                                         </div>
                                     </li>
-                                `).join('')}
+                                `}).join('')}
                             </ul>
                         </div>
                     `;
@@ -388,9 +439,9 @@
         function editOrderFromAll(sweetId, orderId) {
             closeModal('allOrdersModal');
             setTimeout(() => {
-                openModal(sweetId); // Open the specific sweet modal
+                openModal(sweetId); 
                 setTimeout(() => {
-                    editOrder(sweetId, orderId); // Trigger edit mode
+                    editOrder(sweetId, orderId); 
                 }, 100);
             }, 200);
         }
@@ -405,12 +456,18 @@
             }
         }
 
-        function updateQuantityPlaceholder() { quantityPlaceholder.textContent = `${quantitySlider.value} Kg`; }
-
         function saveOrder(e) {
             e.preventDefault();
             const sweet = sweets.find(s => s.id === currentSweetId);
             if (!sweet) return;
+
+            const b500 = parseInt(document.getElementById('boxes500').value) || 0;
+            const b1kg = parseInt(document.getElementById('boxes1kg').value) || 0;
+            
+            if (b500 === 0 && b1kg === 0) {
+                alert("Please enter at least one box (500g or 1kg)!");
+                return;
+            }
 
             const orderType = document.getElementById('orderType').value;
             const orderData = {
@@ -419,21 +476,20 @@
                 type: orderType,
                 date: document.getElementById('orderDate').value,
                 time: document.getElementById('orderTime').value,
-                qty: quantitySlider.value,
+                boxes500: b500,
+                boxes1kg: b1kg,
                 address: orderType === 'Delivery' ? document.getElementById('customerAddress').value : 'N/A',
                 table: orderType === 'DineIn' ? (document.getElementById('tableNumber').value || 'Not specified') : 'N/A'
             };
             
             if (editingOrderId) {
-                // Update existing order
                 const orderIndex = sweet.orders.findIndex(o => o.id === editingOrderId);
                 if (orderIndex !== -1) {
-                    orderData.id = editingOrderId; // Keep the same ID
+                    orderData.id = editingOrderId; 
                     sweet.orders[orderIndex] = orderData;
                 }
-                editingOrderId = null; // Exit edit mode
+                editingOrderId = null; 
             } else {
-                // Add new order
                 orderData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                 sweet.orders.push(orderData);
             }
