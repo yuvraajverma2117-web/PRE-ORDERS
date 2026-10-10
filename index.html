@@ -58,7 +58,8 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Order Type</label>
                     <select id="orderType" onchange="toggleOrderFields()" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] bg-white">
-                        <option value="Delivery">Delivery / Takeaway</option>
+                        <option value="Delivery">Delivery</option>
+                        <option value="Takeaway">Takeaway / Pickup</option>
                         <option value="DineIn">Dine-In (Sitting)</option>
                     </select>
                 </div>
@@ -74,7 +75,6 @@
                     </div>
                 </div>
 
-                <!-- Dynamic Box Selection Area -->
                 <div id="boxSelectionArea" class="bg-scarlet p-4 rounded-xl shadow-md text-white"></div>
 
                 <div id="addressBox">
@@ -103,18 +103,22 @@
             <button onclick="closeModal('allOrdersModal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             <h2 class="text-2xl text-scarlet mb-4">All Customer Pre-Orders</h2>
             
-            <div class="grid grid-cols-3 gap-4 mb-6">
-                <div class="bg-peach p-4 rounded-lg text-center">
-                    <p class="text-2xl font-bold text-scarlet" id="totalOrdersCount">0</p>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-peach p-3 rounded-lg text-center">
+                    <p class="text-xl font-bold text-scarlet" id="totalOrdersCount">0</p>
                     <p class="text-xs text-gray-700 font-semibold">Total Orders</p>
                 </div>
-                <div class="bg-peach p-4 rounded-lg text-center">
-                    <p class="text-2xl font-bold text-scarlet" id="totalKgCount">0</p>
+                <div class="bg-peach p-3 rounded-lg text-center">
+                    <p class="text-xl font-bold text-scarlet" id="totalKgCount">0</p>
                     <p class="text-xs text-gray-700 font-semibold">Total Qty</p>
                 </div>
-                <div class="bg-peach p-4 rounded-lg text-center">
+                <div class="bg-peach p-3 rounded-lg text-center">
                     <p class="text-xl font-bold text-scarlet" id="totalRevenue">₹0</p>
                     <p class="text-xs text-gray-700 font-semibold">Total Revenue</p>
+                </div>
+                <div class="bg-peach p-3 rounded-lg text-center">
+                    <p class="text-xl font-bold text-scarlet" id="totalAdvance">₹0</p>
+                    <p class="text-xs text-gray-700 font-semibold">Advance Collected</p>
                 </div>
             </div>
 
@@ -146,9 +150,7 @@
             sweet.orders.forEach(order => {
                 if (!order.id) order.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                 if (order.boxes500 === undefined && order.boxes4tray === undefined) {
-                    order.boxes1kg = parseFloat(order.qty) || 0;
-                    order.boxes500 = 0;
-                    order.qty = undefined;
+                    order.boxes1kg = parseFloat(order.qty) || 0; order.boxes500 = 0; order.qty = undefined;
                 }
             });
         });
@@ -175,87 +177,74 @@
             sweetsGrid.innerHTML = sweets.map(sweet => {
                 let totalQty = sweet.orders.reduce((sum, o) => sum + parseFloat(o.qty || 0), 0).toFixed(1);
                 let unit = getUnitLabel(sweet);
-                
                 if (editingSweetId === sweet.id) {
-                    return `
-                        <div class="square-card bg-white p-4 rounded-xl shadow-md border-2 border-scarlet flex flex-col items-center justify-center">
-                            <input type="text" value="${sweet.name}" id="editInput-${sweet.id}" class="w-full text-center p-2 border-2 border-peach rounded-md font-bold focus:outline-none focus:ring-2 focus:ring-scarlet" onblur="saveSweetName('${sweet.id}')" onkeydown="if(event.key==='Enter') saveSweetName('${sweet.id}')" autofocus>
-                            <p class="text-xs text-gray-500 mt-2">Press Enter to save</p>
-                        </div>
-                    `;
+                    return `<div class="square-card bg-white p-4 rounded-xl shadow-md border-2 border-scarlet flex flex-col items-center justify-center"><input type="text" value="${sweet.name}" id="editInput-${sweet.id}" class="w-full text-center p-2 border-2 border-peach rounded-md font-bold focus:outline-none focus:ring-2 focus:ring-scarlet" onblur="saveSweetName('${sweet.id}')" onkeydown="if(event.key==='Enter') saveSweetName('${sweet.id}')" autofocus><p class="text-xs text-gray-500 mt-2">Press Enter to save</p></div>`;
                 }
-                return `
-                    <div class="square-card bg-white p-4 rounded-xl shadow-md cursor-pointer border-2 border-peach flex flex-col items-center justify-center relative" onclick="openModal('${sweet.id}')">
-                        <div class="absolute top-2 right-2 flex gap-1 z-10">
-                            <button onclick="event.stopPropagation(); editSweetName('${sweet.id}')" class="edit-btn bg-white rounded-full p-1 text-gray-400 hover:text-scarlet text-xl shadow-sm">✏️</button>
-                            <button onclick="event.stopPropagation(); deleteSweetSquare('${sweet.id}')" class="edit-btn bg-white rounded-full p-1 text-gray-400 hover:text-scarlet text-xl shadow-sm">🗑️</button>
-                        </div>
-                        <div class="text-4xl mb-2">🍬</div>
-                        <h3 class="text-lg text-gray-800 text-center brand-font uppercase">${sweet.name}</h3>
-                        <div class="mt-2 flex flex-col items-center gap-1">
-                            <span class="inline-block bg-peach text-scarlet px-2 py-1 rounded-full text-xs font-bold">${sweet.orders.length} Orders</span>
-                            <span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-bold">Prepare: ${totalQty} ${unit}</span>
-                        </div>
-                    </div>
-                `;
+                return `<div class="square-card bg-white p-4 rounded-xl shadow-md cursor-pointer border-2 border-peach flex flex-col items-center justify-center relative" onclick="openModal('${sweet.id}')"><div class="absolute top-2 right-2 flex gap-1 z-10"><button onclick="event.stopPropagation(); editSweetName('${sweet.id}')" class="edit-btn bg-white rounded-full p-1 text-gray-400 hover:text-scarlet text-xl shadow-sm">✏️</button><button onclick="event.stopPropagation(); deleteSweetSquare('${sweet.id}')" class="edit-btn bg-white rounded-full p-1 text-gray-400 hover:text-scarlet text-xl shadow-sm">🗑️</button></div><div class="text-4xl mb-2">🍬</div><h3 class="text-lg text-gray-800 text-center brand-font uppercase">${sweet.name}</h3><div class="mt-2 flex flex-col items-center gap-1"><span class="inline-block bg-peach text-scarlet px-2 py-1 rounded-full text-xs font-bold">${sweet.orders.length} Orders</span><span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-bold">Prepare: ${totalQty} ${unit}</span></div></div>`;
             }).join('');
         }
 
         function addSweetSquare() {
             const newSweet = { id: Date.now().toString(), name: "New Sweet", boxType: 'standard', orders: [] };
-            sweets.push(newSweet);
-            editingSweetId = newSweet.id; 
-            saveData();
-            renderSweets();
+            sweets.push(newSweet); editingSweetId = newSweet.id; saveData(); renderSweets();
         }
 
         function editSweetName(id) {
-            editingSweetId = id;
-            renderSweets();
+            editingSweetId = id; renderSweets();
             setTimeout(() => { const input = document.getElementById(`editInput-${id}`); if (input) { input.focus(); input.select(); } }, 10);
         }
 
         function saveSweetName(id) {
-            const input = document.getElementById(`editInput-${id}`);
-            if (!input) return;
+            const input = document.getElementById(`editInput-${id}`); if (!input) return;
             const sweet = sweets.find(s => s.id === id);
             if (sweet) { sweet.name = input.value.trim() || "Unnamed Sweet"; }
-            editingSweetId = null;
-            saveData();
-            renderSweets();
+            editingSweetId = null; saveData(); renderSweets();
         }
 
         function deleteSweetSquare(id) {
-            const sweet = sweets.find(s => s.id === id);
-            if (!sweet) return;
+            const sweet = sweets.find(s => s.id === id); if (!sweet) return;
             let confirmMsg = `Are you sure you want to delete ${sweet.name}?`;
             if (sweet.orders.length > 0) { confirmMsg += `\nThis will also delete all ${sweet.orders.length} pre-orders!`; }
             if (!confirm(confirmMsg)) return;
-            sweets = sweets.filter(s => s.id !== id);
-            saveData();
-            renderSweets();
+            sweets = sweets.filter(s => s.id !== id); saveData(); renderSweets();
         }
 
         function openModal(id) {
-            currentSweetId = id;
-            editingOrderId = null; 
-            submitOrderBtn.innerText = "Save Pre-Order"; 
-            const sweet = sweets.find(s => s.id === id);
-            if (!sweet) return;
+            currentSweetId = id; editingOrderId = null; submitOrderBtn.innerText = "Save Pre-Order"; 
+            const sweet = sweets.find(s => s.id === id); if (!sweet) return;
             modalSweetTitle.textContent = `Pre-order: ${sweet.name}`;
             document.getElementById('orderForm').reset();
             document.getElementById('orderDate').valueAsDate = new Date();
-            
-            setupBoxSelection(sweet);
-            
-            toggleOrderFields(); 
-            renderSingleSweetOrders(sweet);
-            orderModal.classList.remove('hidden');
-            orderModal.classList.add('flex');
+            setupBoxSelection(sweet); toggleOrderFields(); renderSingleSweetOrders(sweet);
+            orderModal.classList.remove('hidden'); orderModal.classList.add('flex');
         }
 
         function setupBoxSelection(sweet) {
             const boxType = getBoxType(sweet);
+            const commonHTML = `
+                <div class="bg-white rounded-lg p-2 mb-2">
+                    <label class="block text-xs text-gray-500 mb-1 text-center">Rate per ${boxType === 'tray' ? 'Box' : 'Kg'} (₹)</label>
+                    <input type="number" id="rateInput" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()">
+                </div>
+                <div class="bg-white rounded-lg p-2 mb-2">
+                    <label class="block text-xs text-gray-500 mb-1 text-center">Token / Advance Paid (₹)</label>
+                    <input type="number" id="advanceInput" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()">
+                </div>
+                <div class="mt-2 bg-peach p-2 rounded-lg text-gray-800 flex justify-between px-4">
+                    <span class="text-sm font-bold">TOTAL QTY:</span>
+                    <span id="totalWeightPlaceholder" class="text-scarlet font-black text-lg">0.0 ${boxType === 'tray' ? 'Boxes' : 'Kg'}</span>
+                </div>
+                <div class="mt-1 bg-gray-900 p-2 rounded-lg text-white space-y-1">
+                    <div class="flex justify-between px-4">
+                        <span class="text-sm font-bold">TOTAL AMOUNT:</span>
+                        <span id="totalAmountPlaceholder" class="text-peach font-black text-lg">₹0</span>
+                    </div>
+                    <div class="flex justify-between px-4 border-t border-gray-700 pt-1 mt-1">
+                        <span class="text-sm font-bold text-red-400">PENDING BALANCE:</span>
+                        <span id="pendingAmountPlaceholder" class="text-red-400 font-black text-lg">₹0</span>
+                    </div>
+                </div>`;
+            
             if (boxType === 'tray') {
                 boxSelectionArea.innerHTML = `
                     <label class="block text-sm font-bold text-white mb-3 uppercase tracking-wide">Select Tray Sizes</label>
@@ -263,9 +252,7 @@
                         <div class="bg-white rounded-lg p-2"><label class="block text-xs text-gray-500 mb-1 text-center">4-Tray Boxes</label><input type="number" id="boxes4tray" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
                         <div class="bg-white rounded-lg p-2"><label class="block text-xs text-gray-500 mb-1 text-center">6-Tray Boxes</label><input type="number" id="boxes6tray" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
                     </div>
-                    <div class="bg-white rounded-lg p-2 mb-2"><label class="block text-xs text-gray-500 mb-1 text-center">Rate per Box (₹)</label><input type="number" id="rateInput" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
-                    <div class="mt-2 bg-peach p-2 rounded-lg text-center text-gray-800 flex justify-between px-4"><span class="text-sm font-bold">TOTAL:</span><span id="totalWeightPlaceholder" class="text-scarlet font-black text-lg">0 Boxes</span></div>
-                    <div class="mt-1 bg-gray-900 p-2 rounded-lg text-center text-white flex justify-between px-4"><span class="text-sm font-bold">AMOUNT:</span><span id="totalAmountPlaceholder" class="text-peach font-black text-lg">₹0</span></div>
+                    ${commonHTML}
                 `;
             } else {
                 boxSelectionArea.innerHTML = `
@@ -274,19 +261,15 @@
                         <div class="bg-white rounded-lg p-2"><label class="block text-xs text-gray-500 mb-1 text-center">500g Boxes</label><input type="number" id="boxes500" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
                         <div class="bg-white rounded-lg p-2"><label class="block text-xs text-gray-500 mb-1 text-center">1kg Boxes</label><input type="number" id="boxes1kg" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
                     </div>
-                    <div class="bg-white rounded-lg p-2 mb-2"><label class="block text-xs text-gray-500 mb-1 text-center">Rate per Kg (₹)</label><input type="number" id="rateInput" min="0" value="0" class="w-full p-2 border-0 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FBD2A4] text-center text-xl font-bold text-gray-800" oninput="updateCalculation()"></div>
-                    <div class="mt-2 bg-peach p-2 rounded-lg text-center text-gray-800 flex justify-between px-4"><span class="text-sm font-bold">TOTAL:</span><span id="totalWeightPlaceholder" class="text-scarlet font-black text-lg">0.0 Kg</span></div>
-                    <div class="mt-1 bg-gray-900 p-2 rounded-lg text-center text-white flex justify-between px-4"><span class="text-sm font-bold">AMOUNT:</span><span id="totalAmountPlaceholder" class="text-peach font-black text-lg">₹0</span></div>
+                    ${commonHTML}
                 `;
             }
         }
 
         function updateCalculation() {
-            const sweet = sweets.find(s => s.id === currentSweetId);
-            if (!sweet) return;
+            const sweet = sweets.find(s => s.id === currentSweetId); if (!sweet) return;
             const boxType = getBoxType(sweet);
             let qty = 0, unit = 'Kg';
-            
             if (boxType === 'tray') {
                 let b4 = parseInt(document.getElementById('boxes4tray').value) || 0;
                 let b6 = parseInt(document.getElementById('boxes6tray').value) || 0;
@@ -296,34 +279,20 @@
                 let b1kg = parseInt(document.getElementById('boxes1kg').value) || 0;
                 qty = (b500 * 0.5) + b1kg; unit = 'Kg';
             }
-            
             let rate = parseFloat(document.getElementById('rateInput').value) || 0;
+            let advance = parseFloat(document.getElementById('advanceInput').value) || 0;
             let amount = qty * rate;
+            let pending = amount - advance;
             
             document.getElementById('totalWeightPlaceholder').innerText = qty.toFixed(1) + ' ' + unit;
             document.getElementById('totalAmountPlaceholder').innerText = '₹' + amount.toFixed(0);
+            document.getElementById('pendingAmountPlaceholder').innerText = '₹' + pending.toFixed(0);
         }
 
         function renderSingleSweetOrders(sweet) {
             if (sweet.orders.length > 0) {
                 ordersList.innerHTML = sweet.orders.map(order => {
-                    return `
-                        <li class="bg-peach p-2 rounded">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="font-bold text-gray-800">${order.name}</span> - ${order.qty} ${order.unit} Total<br>
-                                    <span class="text-xs text-gray-600">📦 ${order.boxDetails}</span><br>
-                                    <span class="text-xs text-gray-600">💰 Rate: ₹${order.rate} | Amount: ₹${order.totalAmount}</span><br>
-                                    <span class="text-xs text-gray-600">📞 ${order.contact} | 📅 ${order.date} at ${order.time}</span><br>
-                                    <span class="text-xs text-gray-600">${order.type === 'DineIn' ? '🪑 Dine-In (Table: ' + order.table + ')' : '🛵 Delivery (' + order.address + ')'}</span>
-                                </div>
-                                <div class="flex gap-1 flex-shrink-0">
-                                    <button onclick="editOrder('${sweet.id}', '${order.id}')" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
-                                    <button onclick="deleteOrder('${sweet.id}', '${order.id}', 'single')" class="text-xs bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
-                                </div>
-                            </div>
-                        </li>
-                    `;
+                    return `<li class="bg-peach p-2 rounded"><div class="flex justify-between items-start"><div><span class="font-bold text-gray-800">${order.name}</span> - ${order.qty} ${order.unit} Total<br><span class="text-xs text-gray-600">📦 ${order.boxDetails}</span><br><span class="text-xs text-gray-600">💰 Total: ₹${order.totalAmount} | Advance: ₹${order.advance} | Pending: ₹${order.pendingAmount}</span><br><span class="text-xs text-gray-600">📞 ${order.contact} | 📅 ${order.date} at ${order.time}</span><br><span class="text-xs text-gray-600">${order.type === 'DineIn' ? '🪑 Dine-In (Table: ' + order.table + ')' : order.type === 'Delivery' ? '🛵 Delivery (' + order.address + ')' : '🛍️ Takeaway'}</span></div><div class="flex gap-1 flex-shrink-0"><button onclick="editOrder('${sweet.id}', '${order.id}')" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button><button onclick="deleteOrder('${sweet.id}', '${order.id}', 'single')" class="text-xs bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button></div></div></li>`;
                 }).join('');
             } else {
                 ordersList.innerHTML = '<li class="text-gray-400 text-xs">No pre-orders for this sweet yet.</li>';
@@ -331,22 +300,16 @@
         }
 
         function editOrder(sweetId, orderId) {
-            const sweet = sweets.find(s => s.id === sweetId);
-            if (!sweet) return;
-            const order = sweet.orders.find(o => o.id === orderId);
-            if (!order) return;
+            const sweet = sweets.find(s => s.id === sweetId); if (!sweet) return;
+            const order = sweet.orders.find(o => o.id === orderId); if (!order) return;
             editingOrderId = orderId; 
-            modalSweetTitle.textContent = `EDITING: ${sweet.name}`;
-            submitOrderBtn.innerText = "Update Pre-Order";
-            
+            modalSweetTitle.textContent = `EDITING: ${sweet.name}`; submitOrderBtn.innerText = "Update Pre-Order";
             document.getElementById('customerName').value = order.name;
             document.getElementById('customerContact').value = order.contact;
             document.getElementById('orderType').value = order.type;
             document.getElementById('orderDate').value = order.date;
             document.getElementById('orderTime').value = order.time;
-            
             setupBoxSelection(sweet);
-            
             if (getBoxType(sweet) === 'tray') {
                 document.getElementById('boxes4tray').value = order.boxes4tray || 0;
                 document.getElementById('boxes6tray').value = order.boxes6tray || 0;
@@ -355,18 +318,15 @@
                 document.getElementById('boxes1kg').value = order.boxes1kg || 0;
             }
             document.getElementById('rateInput').value = order.rate || 0;
-            updateCalculation();
-            
-            toggleOrderFields(); 
-
+            document.getElementById('advanceInput').value = order.advance || 0;
+            updateCalculation(); toggleOrderFields(); 
             if (order.type === 'Delivery') { document.getElementById('customerAddress').value = order.address === 'N/A' ? '' : order.address; } 
-            else { document.getElementById('tableNumber').value = order.table === 'N/A' ? '' : order.table; }
+            else if (order.type === 'DineIn') { document.getElementById('tableNumber').value = order.table === 'N/A' ? '' : order.table; }
         }
 
         function deleteOrder(sweetId, orderId, modalType) {
             if (!confirm('Are you sure you want to delete this pre-order?')) return;
-            const sweet = sweets.find(s => s.id === sweetId);
-            if (!sweet) return;
+            const sweet = sweets.find(s => s.id === sweetId); if (!sweet) return;
             sweet.orders = sweet.orders.filter(o => o.id !== orderId);
             saveData(); renderSweets();
             if (modalType === 'single') { renderSingleSweetOrders(sweet); } else { openAllOrdersModal(); }
@@ -381,24 +341,27 @@
             if (type === 'DineIn') {
                 tableBox.classList.remove('hidden'); addressBox.classList.add('hidden');
                 addressInput.required = false; tableInput.required = true;
-            } else {
+            } else if (type === 'Delivery') {
                 tableBox.classList.add('hidden'); addressBox.classList.remove('hidden');
                 addressInput.required = true; tableInput.required = false;
+            } else { // Takeaway
+                tableBox.classList.add('hidden'); addressBox.classList.add('hidden');
+                addressInput.required = false; tableInput.required = false;
             }
         }
 
         function openAllOrdersModal() {
-            let totalOrders = 0, totalKg = 0, totalRev = 0;
+            let totalOrders = 0, totalKg = 0, totalRev = 0, totalAdv = 0;
             sweets.forEach(sweet => {
                 sweet.orders.forEach(order => {
-                    totalOrders++;
-                    totalKg += parseFloat(order.qty);
-                    totalRev += parseFloat(order.totalAmount);
+                    totalOrders++; totalKg += parseFloat(order.qty);
+                    totalRev += parseFloat(order.totalAmount); totalAdv += parseFloat(order.advance);
                 });
             });
             document.getElementById('totalOrdersCount').innerText = totalOrders;
             document.getElementById('totalKgCount').innerText = totalKg.toFixed(1);
             document.getElementById('totalRevenue').innerText = "₹" + totalRev.toFixed(0);
+            document.getElementById('totalAdvance').innerText = "₹" + totalAdv.toFixed(0);
 
             if (totalOrders === 0) {
                 allOrdersList.innerHTML = '<p class="text-gray-400 text-center py-4 font-semibold">No pre-orders have been made yet.</p>';
@@ -407,38 +370,10 @@
                     if (sweet.orders.length === 0) return '';
                     let sweetTotalQty = sweet.orders.reduce((sum, o) => sum + parseFloat(o.qty), 0).toFixed(1);
                     let unit = getUnitLabel(sweet);
-                    return `
-                        <div class="border-b border-peach pb-3 mb-3">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="text-scarlet text-lg brand-font uppercase">${sweet.name} 🍬</h3>
-                                <span class="bg-gray-800 text-white px-2 py-1 rounded-full text-xs font-bold">Prep: ${sweetTotalQty} ${unit}</span>
-                            </div>
-                            <ul class="space-y-2">
-                                ${sweet.orders.map(o => {
-                                    return `
-                                    <li class="bg-gray-50 p-2 rounded text-xs relative">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <span class="font-bold text-gray-800 block">${o.name} <span class="text-scarlet">₹${o.totalAmount}</span></span>
-                                            <div class="flex gap-1 flex-shrink-0">
-                                                <button onclick="editOrderFromAll('${sweet.id}', '${o.id}')" class="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button>
-                                                <button onclick="deleteOrder('${sweet.id}', '${o.id}', 'all')" class="bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button>
-                                            </div>
-                                        </div>
-                                        <div class="text-gray-600 pr-12">
-                                            📦 ${o.boxDetails} <br>
-                                            💰 Rate: ₹${o.rate} | Qty: ${o.qty} ${o.unit}<br>
-                                            📞 ${o.contact} | 📅 ${o.date} at ${o.time}<br>
-                                            ${o.type === 'DineIn' ? '🪑 Table: ' + o.table : '🛵 Address: ' + o.address}
-                                        </div>
-                                    </li>
-                                `}).join('')}
-                            </ul>
-                        </div>
-                    `;
+                    return `<div class="border-b border-peach pb-3 mb-3"><div class="flex justify-between items-center mb-2"><h3 class="text-scarlet text-lg brand-font uppercase">${sweet.name} 🍬</h3><span class="bg-gray-800 text-white px-2 py-1 rounded-full text-xs font-bold">Prep: ${sweetTotalQty} ${unit}</span></div><ul class="space-y-2">${sweet.orders.map(o => `<li class="bg-gray-50 p-2 rounded text-xs relative"><div class="flex justify-between items-start mb-1"><span class="font-bold text-gray-800 block">${o.name} <span class="text-scarlet">₹${o.pendingAmount} Pending</span></span><div class="flex gap-1 flex-shrink-0"><button onclick="editOrderFromAll('${sweet.id}', '${o.id}')" class="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">✏️</button><button onclick="deleteOrder('${sweet.id}', '${o.id}', 'all')" class="bg-scarlet text-white px-2 py-1 rounded hover:bg-red-700">🗑️</button></div></div><div class="text-gray-600 pr-12">📦 ${o.boxDetails} <br>💰 Total: ₹${o.totalAmount} | Advance: ₹${o.advance}<br>📞 ${o.contact} | 📅 ${o.date} at ${o.time}<br>${o.type === 'DineIn' ? '🪑 Table: ' + o.table : o.type === 'Delivery' ? '🛵 Address: ' + o.address : '🛍️ Takeaway'}</div></li>`).join('')}</ul></div>`;
                 }).join('');
             }
-            allOrdersModal.classList.remove('hidden');
-            allOrdersModal.classList.add('flex');
+            allOrdersModal.classList.remove('hidden'); allOrdersModal.classList.add('flex');
         }
 
         function editOrderFromAll(sweetId, orderId) {
@@ -448,16 +383,13 @@
 
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
             if (modalId === 'orderModal') { currentSweetId = null; editingOrderId = null; }
         }
 
         function saveOrder(e) {
             e.preventDefault();
-            const sweet = sweets.find(s => s.id === currentSweetId);
-            if (!sweet) return;
-
+            const sweet = sweets.find(s => s.id === currentSweetId); if (!sweet) return;
             const boxType = getBoxType(sweet);
             let qty = 0, unit = 'Kg', boxDetails = '', hasBox = false;
 
@@ -465,28 +397,27 @@
                 let b4 = parseInt(document.getElementById('boxes4tray').value) || 0;
                 let b6 = parseInt(document.getElementById('boxes6tray').value) || 0;
                 if (b4 === 0 && b6 === 0) { alert("Please enter at least one tray!"); return; }
-                qty = b4 + b6; unit = 'Boxes'; hasBox = true;
-                boxDetails = `${b4} x 4-Tray | ${b6} x 6-Tray`;
+                qty = b4 + b6; unit = 'Boxes'; hasBox = true; boxDetails = `${b4} x 4-Tray | ${b6} x 6-Tray`;
             } else {
                 let b500 = parseInt(document.getElementById('boxes500').value) || 0;
                 let b1kg = parseInt(document.getElementById('boxes1kg').value) || 0;
                 if (b500 === 0 && b1kg === 0) { alert("Please enter at least one box!"); return; }
-                qty = (b500 * 0.5) + b1kg; unit = 'Kg'; hasBox = true;
-                boxDetails = `${b500} x 500g | ${b1kg} x 1kg`;
+                qty = (b500 * 0.5) + b1kg; unit = 'Kg'; hasBox = true; boxDetails = `${b500} x 500g | ${b1kg} x 1kg`;
             }
             
             let rate = parseFloat(document.getElementById('rateInput').value) || 0;
+            let advance = parseFloat(document.getElementById('advanceInput').value) || 0;
             let amount = qty * rate;
+            let pending = amount - advance;
             const orderType = document.getElementById('orderType').value;
             
             const orderData = {
                 name: document.getElementById('customerName').value,
                 contact: document.getElementById('customerContact').value,
-                type: orderType,
-                date: document.getElementById('orderDate').value,
+                type: orderType, date: document.getElementById('orderDate').value,
                 time: document.getElementById('orderTime').value,
                 qty: qty, unit: unit, boxDetails: boxDetails,
-                rate: rate, totalAmount: amount,
+                rate: rate, totalAmount: amount, advance: advance, pendingAmount: pending,
                 address: orderType === 'Delivery' ? document.getElementById('customerAddress').value : 'N/A',
                 table: orderType === 'DineIn' ? (document.getElementById('tableNumber').value || 'Not specified') : 'N/A'
             };
@@ -502,7 +433,6 @@
                 orderData.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                 sweet.orders.push(orderData);
             }
-            
             saveData(); closeModal('orderModal'); renderSweets();
         }
 
