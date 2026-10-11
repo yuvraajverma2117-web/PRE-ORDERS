@@ -127,7 +127,8 @@
     </div>
 
     <script>
-        let sweets = JSON.parse(localStorage.getItem('madhukunjSweets'));
+        // Changed key name to V3 to force fresh defaults on your iPad
+        let sweets = JSON.parse(localStorage.getItem('madhukunjSweetsV3'));
         
         if (!sweets || sweets.length === 0) {
             sweets = [
@@ -135,11 +136,10 @@
                 { id: 'def-2', name: "MAVA MIX MITHAI", boxType: 'standard', orders: [] },
                 { id: 'def-3', name: "SADA BARFI", boxType: 'standard', orders: [] },
                 { id: 'def-4', name: "MILK CAKE", boxType: 'standard', orders: [] },
-                { id: 'def-5', name: "GULAB JAMUN", boxType: 'standard', orders: [] },
-                { id: 'def-6', name: "KAJU KATLI", boxType: 'standard', orders: [] },
-                { id: 'def-7', name: "DRY FRUIT TRAY", boxType: 'tray', orders: [] }
+                { id: 'def-5', name: "SADA PETHA DRY", boxType: 'standard', orders: [] },
+                { id: 'def-6', name: "DRY FRUIT TRAY", boxType: 'tray', orders: [] }
             ];
-            localStorage.setItem('madhukunjSweets', JSON.stringify(sweets));
+            localStorage.setItem('madhukunjSweetsV3', JSON.stringify(sweets));
         }
 
         let currentSweetId = null, editingSweetId = null, editingOrderId = null; 
@@ -154,7 +154,7 @@
                 }
             });
         });
-        localStorage.setItem('madhukunjSweets', JSON.stringify(sweets));
+        localStorage.setItem('madhukunjSweetsV3', JSON.stringify(sweets));
 
         const sweetsGrid = document.getElementById('sweetsGrid');
         const orderModal = document.getElementById('orderModal');
@@ -165,7 +165,7 @@
         const submitOrderBtn = document.getElementById('submitOrderBtn');
         const boxSelectionArea = document.getElementById('boxSelectionArea');
 
-        function saveData() { localStorage.setItem('madhukunjSweets', JSON.stringify(sweets)); }
+        function saveData() { localStorage.setItem('madhukunjSweetsV3', JSON.stringify(sweets)); }
         function getBoxType(sweet) { return sweet.boxType || (sweet.name.toUpperCase().includes('TRAY') ? 'tray' : 'standard'); }
         function getUnitLabel(sweet) { return getBoxType(sweet) === 'tray' ? 'Boxes' : 'Kg'; }
 
